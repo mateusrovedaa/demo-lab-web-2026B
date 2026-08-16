@@ -1,0 +1,31 @@
+### Está de pé?
+GET http://localhost:3001/health
+
+### Listar a fila
+GET http://localhost:3001/inscricoes
+
+### Entrar na fila
+POST http://localhost:3001/inscricoes
+Content-Type: application/json
+
+{
+  "nome": "Carla Dias",
+  "email": "carla@exemplo.com"
+}
+
+### Faltando campo: responde 400
+POST http://localhost:3001/inscricoes
+Content-Type: application/json
+
+{
+  "nome": "Sem e-mail"
+}
+
+### E-mail repetido: responde 409
+POST http://localhost:3001/inscricoes
+Content-Type: application/json
+
+{
+  "nome": "Ana de novo",
+  "email": "ana@exemplo.com"
+}
