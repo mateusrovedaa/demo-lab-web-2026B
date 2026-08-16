@@ -1,0 +1,19 @@
+// O schema é a fonte da verdade do banco: quem manda aqui é este arquivo,
+// e as migrations são o histórico das mudanças dele.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Inscricao {
+  id       Int      @id @default(autoincrement())
+  nome     String
+  email    String   @unique
+  status   String   @default("na_fila")
+  criadaEm DateTime @default(now())
+}

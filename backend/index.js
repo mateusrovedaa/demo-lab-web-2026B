@@ -1,43 +1,42 @@
+import "dotenv/config";
 import express from "express";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaClient } from "./generated/prisma/client.ts";
+
+// O adapter é o motorista: sabe falar com este banco específico.
+// O PrismaClient é o ORM: fala em objetos e deixa o SQL com o adapter.
+const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 const app = express();
-
-// Sem isso, req.body chega undefined: alguém precisa ler o corpo da
-// requisição e transformar o texto JSON em objeto JavaScript.
 app.use(express.json());
-
-const inscricoes = [
-  { id: 1, nome: "Ana Souza", email: "ana@exemplo.com", status: "na_fila" },
-  { id: 2, nome: "Bruno Lima", email: "bruno@exemplo.com", status: "na_fila" },
-];
-let proximoId = 3;
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/inscricoes", (req, res) => {
+// As rotas não mudaram de forma. O que mudou é de onde vêm os dados,
+// e que agora eles sobrevivem ao restart do servidor.
+app.get("/inscricoes", async (req, res) => {
+  const inscricoes = await prisma.inscricao.findMany({
+    orderBy: { criadaEm: "desc" },
+  });
   res.json(inscricoes);
 });
 
-// POST é criação. O cliente manda o corpo, o servidor decide se aceita.
-app.post("/inscricoes", (req, res) => {
+app.post("/inscricoes", async (req, res) => {
   const { nome, email } = req.body ?? {};
 
-  // 400: o pedido veio errado. A culpa é de quem chamou.
   if (!nome || !email) {
     return res.status(400).json({ erro: "nome e email são obrigatórios" });
   }
 
-  // 409: o pedido está bem formado, mas conflita com o que já existe.
-  if (inscricoes.some((i) => i.email === email)) {
+  const jaExiste = await prisma.inscricao.findUnique({ where: { email } });
+  if (jaExiste) {
     return res.status(409).json({ erro: "esse e-mail já está na lista" });
   }
 
-  const inscricao = { id: proximoId++, nome, email, status: "na_fila" };
-  inscricoes.push(inscricao);
-
-  // 201: criado. Devolve o recurso, agora com o id que o servidor deu.
+  const inscricao = await prisma.inscricao.create({ data: { nome, email } });
   res.status(201).json(inscricao);
 });
 
