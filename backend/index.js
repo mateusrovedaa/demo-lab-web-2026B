@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "./generated/prisma/client.ts";
 
@@ -9,6 +10,12 @@ const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 const app = express();
+
+// O navegador só entrega a resposta ao JavaScript de outra origem se o
+// servidor autorizar. Origem é protocolo + host + porta, e 5173 não é 3001.
+// Liberar geral resolve na hora e é aceitável em dev. Em produção, uma lista.
+app.use(cors({ origin: process.env.ORIGEM_DO_FRONTEND ?? "*" }));
+
 app.use(express.json());
 
 app.get("/health", (req, res) => {
