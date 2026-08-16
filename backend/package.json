@@ -1,0 +1,30 @@
+{
+  "name": "lista-espera-back",
+  "version": "1.0.0",
+  "description": "API da lista de espera",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js",
+    "migrate": "prisma migrate dev",
+    "studio": "prisma studio",
+    "generate": "prisma generate"
+  },
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "prisma": "^7.9.1"
+  },
+  "allowScripts": {
+    "prisma@7.9.1": true,
+    "@prisma/engines@7.9.1": true,
+    "better-sqlite3@12.11.1": true
+  }
+}

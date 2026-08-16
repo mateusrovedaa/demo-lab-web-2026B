@@ -1,0 +1,12 @@
+node_modules/
+dist/
+
+# segredos e configuração de máquina
+.env
+
+# banco local do SQLite
+*.db
+*.db-journal
+
+# cliente gerado pelo Prisma: nasce do schema, não vai para o repositório
+backend/generated/
