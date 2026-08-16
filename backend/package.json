@@ -1,5 +1,5 @@
 {
-  "name": "lista-espera-back",
+  "name": "lista-espera-backend",
   "version": "1.0.0",
   "description": "API da lista de espera",
   "main": "index.js",
