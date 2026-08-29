@@ -73,3 +73,35 @@ li span {
   padding: 0.6rem 0.8rem;
   border-radius: 4px;
 }
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+
+.painel {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e8e6dc;
+}
+
+.secundario {
+  background: transparent;
+  color: #6b6a64;
+  padding: 0.3rem 0;
+  text-decoration: underline;
+}
+
+select {
+  padding: 0.3rem;
+  border: 1px solid #cfcdc4;
+  border-radius: 4px;
+  font: inherit;
+  background: #fff;
+}
