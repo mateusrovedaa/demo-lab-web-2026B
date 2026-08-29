@@ -1,22 +1,28 @@
 # Lista de espera
 
-Demo da aula 4 do Laboratório de Programação para Internet. Um frontend e um
-backend separados, conversando por HTTP, com os dados num banco de verdade.
+Demo das aulas 4 e 6 do Laboratório de Programação para Internet. Um frontend
+e um backend separados, conversando por HTTP, com os dados num banco de verdade
+e uma área que só abre com login.
 
-A funcionalidade é a menor possível de propósito: entrar numa fila com nome e
-e-mail, e ver quem já está nela. É a mesma forma que a primeira feature de
-vocês vai ter na aula 5, então serve de molde.
+A funcionalidade é a menor possível de propósito. A fila é pública: qualquer um
+entra com nome e e-mail, e qualquer um vê quem está nela, só os nomes. A área da
+organização exige conta, e é lá que aparecem os e-mails e o status de cada
+inscrição. Duas coisas no mesmo sistema, com regras diferentes, que é a forma
+que quase todo projeto de vocês vai ter.
 
 ## O que tem aqui
 
 ```
 backend/             API em Node com Express, na porta 3001
   index.js           as rotas: quem responde o quê
+  auth.js            a configuração da autenticação, num lugar só
+  prisma.js          o cliente do banco, compartilhado pelas rotas e pelo auth
   prisma/schema.prisma   o desenho do banco
   prisma/migrations/     o histórico de mudanças do banco
   requisicoes.http   requisições prontas para testar sem frontend
 frontend/            tela em React com Vite, na porta 5173
-  src/App.jsx        a lista e o formulário
+  src/App.jsx        a fila pública, o login e a área da organização
+  src/auth-client.js o cliente da biblioteca de auth
 ```
 
 Duas pastas, dois `package.json`, dois processos, duas portas. O que liga os
@@ -48,10 +54,24 @@ npm run studio       # abre o Prisma Studio e mostra as tabelas
 npm run generate     # regera o cliente do Prisma a partir do schema
 ```
 
+Não existe usuário de fábrica. Crie o seu com o backend rodando:
+
+```bash
+curl -X POST localhost:3001/api/auth/sign-up/email \
+  -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:5173" \
+  -d '{"name":"Seu Nome","email":"voce@exemplo.com","password":"senha-de-teste-123"}'
+```
+
+Depois é só entrar pela tela. O `Origin` está aí porque a API recusa pedido de
+login vindo de origem que ela não conhece, e o curl não manda esse cabeçalho
+sozinho.
+
 ## As etapas
 
-O repositório foi construído em seis passos, um por commit, cada um com uma
-tag. Para ver o código como ele estava em qualquer momento da aula:
+O repositório foi construído em dez passos, um por commit, cada um com uma
+tag. As etapas 1 a 6 são da aula 4, as 7 a 10 são da aula 6. Para ver o código
+como ele estava em qualquer momento da aula:
 
 ```bash
 git checkout etapa-3      # volta para o passo 3
@@ -66,8 +86,12 @@ git checkout main         # volta para o final
 | `etapa-4` | Frontend em React buscando a lista com `fetch` | O navegador bloqueia: é o CORS aparecendo |
 | `etapa-5` | `cors` no backend e o formulário no frontend | Duas origens diferentes precisam de autorização explícita |
 | `etapa-6` | README, scripts e `.env.example` | O que faz o projeto rodar na máquina de outra pessoa |
+| `etapa-7` | Better Auth, tabelas de usuário e sessão, cookie httpOnly | Login é uma linha na tabela e um cookie que o JavaScript não lê |
+| `etapa-8` | `exigirLogin`, rotas `/admin` e lista pública sem e-mail | Quem decide o que você pode ver é o servidor, não a tela |
+| `etapa-9` | Tela de login, `useSession`, área da organização e logout | O frontend pergunta ao servidor quem está logado, não decide sozinho |
+| `etapa-10` | Rate limit, recuperação de senha e cookies de produção | O que separa um login que funciona de um login que aguenta |
 
-As dependências das seis etapas já estão no `package.json` desde o primeiro
+As dependências de todas as etapas já estão no `package.json` desde o primeiro
 commit. Instale uma vez e navegue entre as tags sem reinstalar nada.
 
 ## Sobre o ORM
@@ -120,6 +144,14 @@ E trocar o SQLite por Postgres é mudar o `provider` no schema, o adapter e a
 - **A lista aparece vazia**: confira se o backend está rodando e se o `.env` do
   frontend aponta para a porta certa. A aba Network do navegador responde isso
   em cinco segundos.
+- **`Model user does not exist in the database`**: a migration rodou mas o
+  cliente do Prisma é o antigo. Rode `npm run generate`.
+- **Login responde 200 e a tela continua deslogada**: o cookie não está indo.
+  Falta `credentials: "include"` no frontend, ou `credentials: true` no CORS do
+  backend. Precisa dos dois.
+- **`Invalid origin`, com 403 no login**: a origem do frontend não está em
+  `trustedOrigins`, no `auth.js`. No curl, é o cabeçalho `Origin` que falta.
+- **429 no login**: o rate limit da etapa 10 pegou você. Espere um minuto.
 
 ## Para o projeto de vocês
 
@@ -128,5 +160,8 @@ Copiem a forma, não o conteúdo. O que vale levar:
 - Duas pastas separadas, cada uma com seu `package.json`.
 - `.env` fora do repositório e `.env.example` dentro dele.
 - Uma rota de saúde, para saber se o serviço está de pé.
-- O status code certo em cada resposta: 200, 201, 400, 404, 409.
+- O status code certo em cada resposta: 200, 201, 400, 401, 403, 404, 409.
 - O schema do banco versionado em migration, nunca alterado na mão.
+- Autenticação com biblioteca, não escrita à mão.
+- A checagem de sessão numa função só, usada por toda rota protegida.
+- Cada rota devolvendo só o que aquele usuário pode ver.
