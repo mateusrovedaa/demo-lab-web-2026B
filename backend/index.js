@@ -1,20 +1,26 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "./generated/prisma/client.ts";
-
-// O adapter é o motorista: sabe falar com este banco específico.
-// O PrismaClient é o ORM: fala em objetos e deixa o SQL com o adapter.
-const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./auth.js";
+import { prisma } from "./prisma.js";
 
 const app = express();
 
-// O navegador só entrega a resposta ao JavaScript de outra origem se o
-// servidor autorizar. Origem é protocolo + host + porta, e 5173 não é 3001.
-// Liberar geral resolve na hora e é aceitável em dev. Em produção, uma lista.
-app.use(cors({ origin: process.env.ORIGEM_DO_FRONTEND ?? "*" }));
+// `credentials: true` é a novidade da aula. Sem isso o navegador até faz a
+// requisição, mas não manda o cookie junto, e o servidor não reconhece ninguém.
+// E com credentials não existe `origin: "*"`: precisa ser uma origem nomeada.
+app.use(
+  cors({
+    origin: process.env.ORIGEM_DO_FRONTEND,
+    credentials: true,
+  })
+);
+
+// A biblioteca entra antes do express.json() de propósito: ela lê o corpo da
+// requisição do jeito dela, e quem lê primeiro consome o stream.
+// Uma linha, e nascem /sign-up/email, /sign-in/email, /sign-out, /get-session.
+app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use(express.json());
 
@@ -22,8 +28,6 @@ app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// As rotas não mudaram de forma. O que mudou é de onde vêm os dados,
-// e que agora eles sobrevivem ao restart do servidor.
 app.get("/inscricoes", async (req, res) => {
   const inscricoes = await prisma.inscricao.findMany({
     orderBy: { criadaEm: "desc" },

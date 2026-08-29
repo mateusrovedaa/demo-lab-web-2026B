@@ -29,3 +29,55 @@ Content-Type: application/json
   "nome": "Ana de novo",
   "email": "ana@exemplo.com"
 }
+
+### Criar a conta da organização
+POST http://localhost:3001/api/auth/sign-up/email
+Content-Type: application/json
+Origin: http://localhost:5173
+
+{
+  "name": "Mateus Roveda",
+  "email": "prof@exemplo.com",
+  "password": "senha-de-teste-123"
+}
+
+### Entrar. A resposta traz o Set-Cookie da sessão
+POST http://localhost:3001/api/auth/sign-in/email
+Content-Type: application/json
+Origin: http://localhost:5173
+
+{
+  "email": "prof@exemplo.com",
+  "password": "senha-de-teste-123"
+}
+
+### Senha errada: 401, e a mensagem não diz qual dos dois campos falhou
+POST http://localhost:3001/api/auth/sign-in/email
+Content-Type: application/json
+Origin: http://localhost:5173
+
+{
+  "email": "prof@exemplo.com",
+  "password": "chuteichutei"
+}
+
+### Quem sou eu, segundo o cookie
+GET http://localhost:3001/api/auth/get-session
+
+### Sair. Apaga a linha da sessão no banco
+POST http://localhost:3001/api/auth/sign-out
+Origin: http://localhost:5173
+
+### Área da organização, sem sessão: 401
+GET http://localhost:3001/admin/inscricoes
+
+### Área da organização, com sessão: a fila com os e-mails
+GET http://localhost:3001/admin/inscricoes
+
+### Mudar o status de uma inscrição
+PATCH http://localhost:3001/admin/inscricoes/1
+Content-Type: application/json
+
+{
+  "status": "chamada"
+}
