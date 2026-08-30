@@ -7,9 +7,6 @@ import { prisma } from "./prisma.js";
 
 const app = express();
 
-// `credentials: true` é a novidade da aula. Sem isso o navegador até faz a
-// requisição, mas não manda o cookie junto, e o servidor não reconhece ninguém.
-// E com credentials não existe `origin: "*"`: precisa ser uma origem nomeada.
 app.use(
   cors({
     origin: process.env.ORIGEM_DO_FRONTEND,
@@ -24,7 +21,7 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
 // Uma função só, usada por toda rota que exige login. A checagem mora aqui,
-// não copiada em cada rota, porque a que você esquecer de copiar é o buraco.
+// não copiada em cada rota.
 async function exigirLogin(req, res, next) {
   const sessao = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
