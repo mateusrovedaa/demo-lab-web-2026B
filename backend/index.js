@@ -20,6 +20,7 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use(express.json());
 
+
 // Uma função só, usada por toda rota que exige login. A checagem mora aqui,
 // não copiada em cada rota.
 async function exigirLogin(req, res, next) {
