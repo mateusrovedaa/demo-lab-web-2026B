@@ -44,6 +44,38 @@ When("peço a lista pública", async function () {
   await guardarResposta(this, await api("/inscricoes"));
 });
 
+When("peço a lista da organização sem estar logado", async function () {
+  await guardarResposta(this, await api("/admin/inscricoes"));
+});
+
+Given("que sou da organização", async function () {
+  // O cadastro já abre sessão: o cookie vem no próprio sign-up, sem login separado.
+  const resposta = await api("/api/auth/sign-up/email", {
+    metodo: "POST",
+    corpo: { name: "Organização", email: "org@exemplo.com", password: "senha-de-teste-123" },
+  });
+  assert.ok(resposta.ok, `cadastro da organização falhou com ${resposta.status}`);
+  this.cookie = resposta.headers.getSetCookie()[0].split(";")[0];
+});
+
+When("peço a lista da organização", async function () {
+  await guardarResposta(this, await api("/admin/inscricoes", { cookie: this.cookie }));
+});
+
+When("marco a inscrição de {string} como {string}", async function (email, status) {
+  const lista = await (await api("/admin/inscricoes", { cookie: this.cookie })).json();
+  const inscricao = lista.find((i) => i.email === email);
+  assert.ok(inscricao, `esperava ${email} na lista da organização`);
+  await guardarResposta(
+    this,
+    await api(`/admin/inscricoes/${inscricao.id}`, {
+      metodo: "PATCH",
+      corpo: { status },
+      cookie: this.cookie,
+    }),
+  );
+});
+
 Then("o status da resposta deve ser {int}", function (esperado) {
   assert.equal(this.resposta.status, esperado);
 });
@@ -56,6 +88,10 @@ Then("a lista pública deve conter {string}", async function (nome) {
 Then("a lista pública não deve expor {string}", async function (email) {
   const texto = await (await api("/inscricoes")).text();
   assert.ok(!texto.includes(email), "a lista pública vazou o e-mail");
+});
+
+Then("a lista da organização deve conter o e-mail {string}", function (email) {
+  assert.ok(this.corpo.some((i) => i.email === email), `esperava ${email} na lista`);
 });
 
 Then("a resposta deve dizer {string}", function (trecho) {

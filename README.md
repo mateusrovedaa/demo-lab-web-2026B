@@ -52,7 +52,14 @@ Comandos úteis do backend:
 ```bash
 npm run studio       # abre o Prisma Studio e mostra as tabelas
 npm run generate     # regera o cliente do Prisma a partir do schema
+npm run test:bdd     # os exemplos de BDD da aula 8 (cucumber-js, Gherkin em pt-BR)
 ```
+
+Os cenários moram em `backend/features/`: `fila.feature` cobre a fila pública
+(entrar, 400, 409, e-mail escondido) e `admin.feature` cobre a área da
+organização (401 sem sessão, lista com e-mails, troca de status). Cada execução
+sobe a API de verdade contra um banco SQLite temporário e joga ele fora no fim:
+o `dev.db` nunca é encostado.
 
 Não existe usuário de fábrica. Crie o seu com o backend rodando:
 
@@ -69,9 +76,9 @@ sozinho.
 
 ## As etapas
 
-O repositório foi construído em dez passos, um por commit, cada um com uma
-tag. As etapas 1 a 6 são da aula 4, as 7 a 10 são da aula 6. Para ver o código
-como ele estava em qualquer momento da aula:
+O repositório foi construído em treze passos, um por commit, cada um com uma
+tag. As etapas 1 a 6 são da aula 4, as 7 a 10 são da aula 6, as 11 a 13 são
+da aula 8. Para ver o código como ele estava em qualquer momento da aula:
 
 ```bash
 git checkout etapa-3      # volta para o passo 3
@@ -90,6 +97,9 @@ git checkout main         # volta para o final
 | `etapa-8` | `exigirLogin`, rotas `/admin` e lista pública sem e-mail | Quem decide o que você pode ver é o servidor, não a tela |
 | `etapa-9` | Tela de login, `useSession`, área da organização e logout | O frontend pergunta ao servidor quem está logado, não decide sozinho |
 | `etapa-10` | Rate limit, recuperação de senha e cookies de produção | O que separa um login que funciona de um login que aguenta |
+| `etapa-11` | `index.js` exporta o app; cucumber-js, `test:bdd` e banco temporário por execução | Refatoração para testabilidade: importar sem subir o servidor |
+| `etapa-12` | `fila.feature` e os passos: entrar, 400, 409, e-mail escondido | O cenário legível vira teste executável |
+| `etapa-13` | `admin.feature` e os passos: 401, lista com e-mails, troca de status | A mesma linguagem cobre regra de autorização |
 
 As dependências de todas as etapas já estão no `package.json` desde o primeiro
 commit. Instale uma vez e navegue entre as tags sem reinstalar nada.
