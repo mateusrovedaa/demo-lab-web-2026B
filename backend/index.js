@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import { toNodeHandler, fromNodeHeaders } from "better-auth/node";
@@ -6,6 +7,7 @@ import { auth } from "./auth.js";
 import { prisma } from "./prisma.js";
 
 const app = express();
+export { app };
 
 app.use(
   cors({
@@ -94,6 +96,11 @@ app.patch("/admin/inscricoes/:id", exigirLogin, async (req, res) => {
   res.json(inscricao);
 });
 
-app.listen(3001, () => {
-  console.log("API ouvindo em http://localhost:3001");
-});
+// Quando este arquivo é importado pelos testes, o servidor não sobe: os
+// testes sobem o app numa porta efêmera, contra um banco temporário.
+const executadoDireto = process.argv[1] === fileURLToPath(import.meta.url);
+if (executadoDireto) {
+  app.listen(3001, () => {
+    console.log("API ouvindo em http://localhost:3001");
+  });
+}

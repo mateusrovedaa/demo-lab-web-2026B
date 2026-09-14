@@ -8,7 +8,8 @@
     "start": "node index.js",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "test:bdd": "cucumber-js"
   },
   "license": "ISC",
   "type": "module",
@@ -21,6 +22,7 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^13.2.1",
     "prisma": "^7.9.1"
   },
   "allowScripts": {
