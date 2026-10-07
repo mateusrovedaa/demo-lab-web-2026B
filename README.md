@@ -102,6 +102,7 @@ git checkout main         # volta para o final
 | `etapa-12` | `fila.feature` e os passos: entrar, 400, 409, e-mail escondido | O cenário legível vira teste executável |
 | `etapa-13` | `admin.feature` e os passos: 401, lista com e-mails, troca de status | A mesma linguagem cobre regra de autorização |
 | `etapa-14` | Validação de entrada com zod e headers com helmet | Input é dado de fora: só entra o que o schema deixa, e o 400 diz o campo errado |
+| `etapa-15` | pino-http para log estruturado e handler central de erro | Cada requisição é uma linha com id; o erro inesperado é logado no servidor, não vazado para o cliente |
 
 As dependências de todas as etapas já estão no `package.json` desde o primeiro
 commit. Instale uma vez e navegue entre as tags sem reinstalar nada.

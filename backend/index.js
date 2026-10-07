@@ -4,9 +4,11 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { z } from "zod";
+import { pinoHttp } from "pino-http";
 import { toNodeHandler, fromNodeHeaders } from "better-auth/node";
 import { auth } from "./auth.js";
 import { prisma } from "./prisma.js";
+import { logger } from "./logs.js";
 
 const app = express();
 export { app };
@@ -19,6 +21,16 @@ app.use(
   cors({
     origin: process.env.ORIGEM_DO_FRONTEND,
     credentials: true,
+  })
+);
+
+// Cada requisição vira uma linha de log com id próprio, e ganha req.log:
+// o resto do código não precisa carregar o logger na mão.
+app.use(
+  pinoHttp({
+    logger,
+    // Silêncio no health check: a sonda de vida não pode encher o log.
+    autoLogging: { ignore: (req) => req.url === "/health" },
   })
 );
 
@@ -130,11 +142,21 @@ app.patch("/admin/inscricoes/:id", exigirLogin, async (req, res) => {
   res.json(inscricao);
 });
 
+// O handler de erros fica no fim, depois de todas as rotas. O Express 5 manda
+// para cá a promessa rejeitada de um handler async, sem try/catch nas rotas.
+app.use((erro, req, res, _next) => {
+  // Só chega aqui o erro inesperado; 400, 401 e 409 as rotas já responderam.
+  // O erro completo vai para o log e o cliente recebe só "erro interno"
+  // (OWASP 2025, A10: não expor stack trace).
+  req.log.error({ err: erro }, "requisição falhou");
+  res.status(500).json({ erro: "erro interno" });
+});
+
 // Quando este arquivo é importado pelos testes, o servidor não sobe: os
 // testes sobem o app numa porta efêmera, contra um banco temporário.
 const executadoDireto = process.argv[1] === fileURLToPath(import.meta.url);
 if (executadoDireto) {
   app.listen(3001, () => {
-    console.log("API ouvindo em http://localhost:3001");
+    logger.info("API ouvindo em http://localhost:3001");
   });
 }
