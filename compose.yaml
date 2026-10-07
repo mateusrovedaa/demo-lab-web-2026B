@@ -1,0 +1,27 @@
+# A API e a tela na mesma rede. O banco fica no volume "dados" e sobrevive
+# quando o container é recriado.
+#
+#   docker compose up --build
+#
+# PORTA muda a porta da tela (padrão 8080). No servidor, o CD usa uma porta
+# por ambiente.
+services:
+  backend:
+    build: ./backend
+    env_file: backend/.env
+    environment:
+      DATABASE_URL: file:/app/dados/app.db
+    volumes:
+      - dados:/app/dados
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${PORTA:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  dados:

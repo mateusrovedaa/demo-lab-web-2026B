@@ -74,6 +74,22 @@ Depois é só entrar pela tela. O `Origin` está aí porque a API recusa pedido 
 login vindo de origem que ela não conhece, e o curl não manda esse cabeçalho
 sozinho.
 
+## Rodando com Docker
+
+Só precisa de Docker. No `backend/.env`, troque `ORIGEM_DO_FRONTEND` e
+`BETTER_AUTH_URL` para `http://localhost:8080` (tela e API passam a ficar no
+mesmo endereço). O caminho do banco o compose já define.
+
+```bash
+docker compose up --build        # builda as duas imagens e sobe os dois serviços
+curl localhost:8080/health       # o nginx repassa para a API
+docker compose logs -f backend   # os logs do pino
+docker compose down              # desce tudo; o volume "dados" guarda o banco
+```
+
+A tela fica em http://localhost:8080. O nginx repassa `/api`, `/inscricoes`,
+`/admin` e `/health` para a API.
+
 ## As etapas
 
 O repositório foi construído em treze passos, um por commit, cada um com uma
@@ -103,6 +119,7 @@ git checkout main         # volta para o final
 | `etapa-13` | `admin.feature` e os passos: 401, lista com e-mails, troca de status | A mesma linguagem cobre regra de autorização |
 | `etapa-14` | Validação de entrada com zod e headers com helmet | Input é dado de fora: só entra o que o schema deixa, e o 400 diz o campo errado |
 | `etapa-15` | pino-http para log estruturado e handler central de erro | Cada requisição é uma linha com id; o erro inesperado é logado no servidor, não vazado para o cliente |
+| `etapa-16` | Dockerfile do backend e do frontend, nginx e docker compose | A imagem leva tudo o que o código precisa e sobe igual em qualquer máquina com Docker |
 
 As dependências de todas as etapas já estão no `package.json` desde o primeiro
 commit. Instale uma vez e navegue entre as tags sem reinstalar nada.
