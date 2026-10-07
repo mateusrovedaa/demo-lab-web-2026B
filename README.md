@@ -78,7 +78,8 @@ sozinho.
 
 O repositório foi construído em treze passos, um por commit, cada um com uma
 tag. As etapas 1 a 6 são da aula 4, as 7 a 10 são da aula 6, as 11 a 13 são
-da aula 8. Para ver o código como ele estava em qualquer momento da aula:
+da aula 8, as 14 a 17 são da aula 11 (em vídeo). Para ver o código como ele
+estava em qualquer momento da aula:
 
 ```bash
 git checkout etapa-3      # volta para o passo 3
@@ -100,6 +101,7 @@ git checkout main         # volta para o final
 | `etapa-11` | `index.js` exporta o app; cucumber-js, `test:bdd` e banco temporário por execução | Refatoração para testabilidade: importar sem subir o servidor |
 | `etapa-12` | `fila.feature` e os passos: entrar, 400, 409, e-mail escondido | O cenário legível vira teste executável |
 | `etapa-13` | `admin.feature` e os passos: 401, lista com e-mails, troca de status | A mesma linguagem cobre regra de autorização |
+| `etapa-14` | Validação de entrada com zod e headers com helmet | Input é dado de fora: só entra o que o schema deixa, e o 400 diz o campo errado |
 
 As dependências de todas as etapas já estão no `package.json` desde o primeiro
 commit. Instale uma vez e navegue entre as tags sem reinstalar nada.

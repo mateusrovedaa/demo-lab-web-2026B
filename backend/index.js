@@ -2,12 +2,18 @@ import "dotenv/config";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import { z } from "zod";
 import { toNodeHandler, fromNodeHeaders } from "better-auth/node";
 import { auth } from "./auth.js";
 import { prisma } from "./prisma.js";
 
 const app = express();
 export { app };
+
+// OWASP Top 10 2025, A02 (configuração insegura): o helmet liga os cabeçalhos
+// de segurança básicos numa linha.
+app.use(helmet());
 
 app.use(
   cors({
@@ -39,6 +45,29 @@ async function exigirLogin(req, res, next) {
   next();
 }
 
+// A regra de entrada em um lugar só, declarada como dado. O if por campo
+// ficava disperso entre as rotas, e um e-mail sem forma de e-mail passava.
+// O que não está no schema é descartado: campo inventado não é guardado.
+const inscricaoSchema = z.object({
+  nome: z.string().trim().min(1, "o nome é obrigatório"),
+  email: z.email("o e-mail precisa ter forma de e-mail"),
+});
+
+const statusSchema = z.object({
+  status: z.enum(["na_fila", "chamada", "desistiu"]),
+});
+
+const idSchema = z.coerce.number().int().positive("o id precisa ser um número");
+
+// O 400 devolve o que está errado, campo a campo: quem chama a API consegue
+// apontar o erro no formulário em vez de adivinhar.
+function camposInvalidos(erroZod) {
+  return erroZod.issues.map((issue) => ({
+    campo: issue.path.join("."),
+    mensagem: issue.message,
+  }));
+}
+
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
@@ -55,11 +84,13 @@ app.get("/inscricoes", async (req, res) => {
 });
 
 app.post("/inscricoes", async (req, res) => {
-  const { nome, email } = req.body ?? {};
+  const dados = inscricaoSchema.safeParse(req.body);
 
-  if (!nome || !email) {
-    return res.status(400).json({ erro: "nome e email são obrigatórios" });
+  if (!dados.success) {
+    return res.status(400).json({ erro: "dados inválidos", campos: camposInvalidos(dados.error) });
   }
+
+  const { nome, email } = dados.data;
 
   const jaExiste = await prisma.inscricao.findUnique({ where: { email } });
   if (jaExiste) {
@@ -79,18 +110,21 @@ app.get("/admin/inscricoes", exigirLogin, async (req, res) => {
 });
 
 app.patch("/admin/inscricoes/:id", exigirLogin, async (req, res) => {
-  const { status } = req.body ?? {};
-
   // O usuário está logado, e ainda assim a entrada dele é validada.
-  // Autenticado não é o mesmo que confiável.
-  const permitidos = ["na_fila", "chamada", "desistiu"];
-  if (!permitidos.includes(status)) {
-    return res.status(400).json({ erro: `status deve ser um de: ${permitidos.join(", ")}` });
+  // Autenticado não é o mesmo que confiável: o cookie não valida a forma.
+  const id = idSchema.safeParse(req.params.id);
+  if (!id.success) {
+    return res.status(400).json({ erro: "dados inválidos", campos: camposInvalidos(id.error) });
+  }
+
+  const dados = statusSchema.safeParse(req.body);
+  if (!dados.success) {
+    return res.status(400).json({ erro: "dados inválidos", campos: camposInvalidos(dados.error) });
   }
 
   const inscricao = await prisma.inscricao.update({
-    where: { id: Number(req.params.id) },
-    data: { status },
+    where: { id: id.data },
+    data: { status: dados.data.status },
   });
 
   res.json(inscricao);

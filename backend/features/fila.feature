@@ -12,7 +12,12 @@ Funcionalidade: Entrar na lista de espera
   Cenário: Faltar o e-mail
     Quando tento entrar na fila só com nome "Sem e-mail"
     Então o status da resposta deve ser 400
-    E a resposta deve dizer "nome e email são obrigatórios"
+    E a resposta deve dizer "dados inválidos"
+
+  Cenário: E-mail sem forma de e-mail
+    Quando entro na fila com nome "Eliza" e e-mail "eliza-nao-e-email"
+    Então o status da resposta deve ser 400
+    E a resposta deve dizer "o e-mail precisa ter forma de e-mail"
 
   Cenário: Repetir o e-mail
     Dado que a fila está vazia

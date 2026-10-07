@@ -21,6 +21,15 @@ Content-Type: application/json
   "nome": "Sem e-mail"
 }
 
+### E-mail sem forma de e-mail: responde 400 (etapa-14)
+POST http://localhost:3001/inscricoes
+Content-Type: application/json
+
+{
+  "nome": "Eliza",
+  "email": "eliza-nao-e-email"
+}
+
 ### E-mail repetido: responde 409
 POST http://localhost:3001/inscricoes
 Content-Type: application/json
