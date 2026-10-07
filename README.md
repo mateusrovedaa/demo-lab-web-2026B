@@ -90,9 +90,47 @@ docker compose down              # desce tudo; o volume "dados" guarda o banco
 A tela fica em http://localhost:8080. O nginx repassa `/api`, `/inscricoes`,
 `/admin` e `/health` para a API.
 
+## Deploy (CI/CD)
+
+Dois workflows em `.github/workflows/`:
+
+- `ci.yml` roda sozinho em todo pull request e em todo push na `dev` e na
+  `main`: testes BDD do backend, lint e build do frontend.
+- `cd.yml` só roda na mão. Na aba **Actions**, escolha **CD**, depois
+  **Run workflow**, a branch e o ambiente. Ele roda a CI de novo, entra no
+  servidor por SSH, baixa o código do commit para a pasta do ambiente, grava o
+  `backend/.env` e sobe os containers com `docker compose up -d --build`.
+
+| Ambiente | Branch | Pasta no servidor | Porta | Aprovação |
+| --- | --- | --- | --- | --- |
+| `dev` | `dev` | `~/demo-lab-web-dev` | 8081 | não |
+| `hml` | `main` | `~/demo-lab-web-hml` | 8080 | sim |
+
+### Preparar uma vez
+
+**No servidor**: um usuário com Docker e git, e a chave pública do deploy no
+`~/.ssh/authorized_keys` dele. As pastas são criadas no primeiro deploy.
+
+**No GitHub**, em Settings > Secrets and variables > Actions, os segredos do
+repositório, que valem para os dois ambientes:
+
+- `SSH_HOST`, `SSH_PORT`, `SSH_USER` e `SSH_KEY` (a chave privada do deploy).
+
+Em Settings > Environments, crie `dev` e `hml`. Em cada um:
+
+- *Deployment branches*: só `dev` no ambiente `dev`, só `main` no `hml`.
+- No `hml`, marque *Required reviewers* e escolha quem aprova.
+- Variável `PORTA` (8081 no dev, 8080 no hml).
+- Segredo `BACKEND_ENV`: o conteúdo inteiro do `backend/.env` daquele
+  ambiente, com o próprio `BETTER_AUTH_SECRET` e o endereço da tela em
+  `ORIGEM_DO_FRONTEND` e `BETTER_AUTH_URL` (por exemplo,
+  `http://IP_DO_SERVIDOR:8081` no dev).
+
+Cada pasta é um projeto do compose, então cada ambiente tem o próprio banco.
+
 ## As etapas
 
-O repositório foi construído em treze passos, um por commit, cada um com uma
+O repositório foi construído em dezessete passos, um por commit, cada um com uma
 tag. As etapas 1 a 6 são da aula 4, as 7 a 10 são da aula 6, as 11 a 13 são
 da aula 8, as 14 a 17 são da aula 11 (em vídeo). Para ver o código como ele
 estava em qualquer momento da aula:
@@ -120,6 +158,7 @@ git checkout main         # volta para o final
 | `etapa-14` | Validação de entrada com zod e headers com helmet | Input é dado de fora: só entra o que o schema deixa, e o 400 diz o campo errado |
 | `etapa-15` | pino-http para log estruturado e handler central de erro | Cada requisição é uma linha com id; o erro inesperado é logado no servidor, não vazado para o cliente |
 | `etapa-16` | Dockerfile do backend e do frontend, nginx e docker compose | A imagem leva tudo o que o código precisa e sobe igual em qualquer máquina com Docker |
+| `etapa-17` | GitHub Actions: CI em todo PR e push, CD manual para `dev` e `hml` | Teste vermelho não entra; o deploy é um botão, e a homologação pede aprovação |
 
 As dependências de todas as etapas já estão no `package.json` desde o primeiro
 commit. Instale uma vez e navegue entre as tags sem reinstalar nada.

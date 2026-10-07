@@ -14,6 +14,11 @@ const pasta = mkdtempSync(join(tmpdir(), "lista-espera-teste-"));
 // Antes de qualquer import da API: dotenv não sobrescreve variável que já
 // existe, então o .env do backend carrega o resto sem encostar no banco.
 process.env.DATABASE_URL = `file:${join(pasta, "teste.db")}`;
+
+// Na CI não existe .env. Os testes definem o que precisam, e o .env, quando
+// existe, não sobrescreve.
+process.env.ORIGEM_DO_FRONTEND ??= "http://localhost:5173";
+process.env.BETTER_AUTH_SECRET ??= "segredo-so-dos-testes";
 await import("dotenv/config");
 
 let servidor;

@@ -1,0 +1,55 @@
+# CD: só roda quando alguém clica em "Run workflow" na aba Actions e escolhe
+# o ambiente. Quem pode publicar em cada ambiente fica em
+# Settings > Environments (ver o README):
+#   dev: só a branch dev
+#   hml: só a branch main, e alguém precisa aprovar
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: Ambiente
+        type: choice
+        options: [dev, hml]
+
+jobs:
+  testes:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: testes
+    runs-on: ubuntu-latest
+    # O segredo BACKEND_ENV e a variável PORTA vêm do ambiente escolhido. No
+    # hml, o job fica parado aqui até alguém aprovar.
+    environment: ${{ inputs.ambiente }}
+    timeout-minutes: 15
+    steps:
+      # Entra no servidor por SSH e, na pasta do ambiente, baixa o código do
+      # commit, grava o .env e sobe os containers. A pasta é criada no primeiro
+      # deploy. O token do GitHub vale só durante este job e permite baixar
+      # também de repositório privado.
+      - name: Atualizar o servidor
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+          PORTA: ${{ vars.PORTA }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: TOKEN,BACKEND_ENV,PORTA
+          script: |
+            set -e
+            mkdir -p ~/demo-lab-web-${{ inputs.ambiente }}
+            cd ~/demo-lab-web-${{ inputs.ambiente }}
+            [ -d .git ] || git init -q
+            git fetch -q --depth 1 "https://x-access-token:$TOKEN@github.com/${{ github.repository }}.git" ${{ github.sha }}
+            git reset -q --hard FETCH_HEAD
+            printf '%s\n' "$BACKEND_ENV" > backend/.env
+            export PORTA
+            docker compose up -d --build
+            docker image prune -f
+            curl -fsS --retry 10 --retry-delay 3 --retry-all-errors http://localhost:$PORTA/health

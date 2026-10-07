@@ -1,0 +1,39 @@
+# CI: roda em todo pull request e em todo push na dev e na main.
+# PR com teste vermelho não entra. O CD chama este mesmo arquivo antes de
+# publicar, então só vai para o servidor o que passou aqui.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+  workflow_call:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Testes BDD do backend
+        working-directory: backend
+        run: |
+          npm ci
+          npx prisma generate
+          npm run test:bdd
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Lint e build do frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run build
